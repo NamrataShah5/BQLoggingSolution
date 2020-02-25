@@ -1,3 +1,4 @@
+/* Public BigQuery Audit View */
 CREATE OR REPLACE VIEW
   `namratashah-ctr-sandbox.new_sink.sp_view` AS(
   WITH
