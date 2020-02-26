@@ -1,6 +1,5 @@
-/* Public BigQuery Audit View */
 CREATE OR REPLACE VIEW
-  `project_id.dataset_id.table_id` AS(
+  `project_id.dataset_id_table_id` AS(
   WITH
     BQAudit2_job AS (
     SELECT
@@ -33,6 +32,9 @@ CREATE OR REPLACE VIEW
             '$.jobInsertion.job.jobStats.startTime')),
         TIMESTAMP(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
             '$.jobChange.job.jobStats.startTime'))) AS startTime,
+            
+      --JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,'$.jobChange.job.jobStats.reservationUsage'),
+      
       COALESCE(TIMESTAMP(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
             '$.jobInsertion.job.jobStats.endTime')),
         TIMESTAMP(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
@@ -148,6 +150,10 @@ CREATE OR REPLACE VIEW
         '$.jobChange.job.jobStats.queryStats.referencedTables') AS referencedTables,
       JSON_EXTRACT(protopayload_auditlog.metadataJson,
         '$.jobChange.job.jobStats.queryStats.referencedRoutines') AS referencedRoutines,
+      JSON_EXTRACT(protopayload_auditlog.metadataJson,
+        '$.jobChange.job.jobStats.queryStats.reservationUsage.name') AS reservationName,
+      JSON_EXTRACT(protopayload_auditlog.metadataJson,
+        '$.jobChange.job.jobStats.queryStats.reservationUsage.slotMs') AS reservedResNameSlotsMs,
       JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
         '$.jobInsertion.job.jobConfig.extractConfig.destinationUris' ) AS destinationUris,
       JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
@@ -177,7 +183,10 @@ CREATE OR REPLACE VIEW
         JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
           '$.jobChange.job.jobConfig.queryConfig.statementType') )AS statementType,
       REGEXP_EXTRACT(protopayload_auditlog.metadataJson, r'BigQueryAuditMetadata","(.*?)":') AS eventName,
-      
+      COALESCE(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
+          '$.jobInsertion.job.jobConfig.labels.sp_name'),
+        JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
+          '$.jobChange.job.jobConfig.labels.sp_name')) AS sp_name,
       COALESCE(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
           '$.jobInsertion.job.jobConfig.labels.querytype'),
         JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
@@ -189,11 +198,16 @@ CREATE OR REPLACE VIEW
       COALESCE( FORMAT_TIMESTAMP("%X", TIMESTAMP(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
               "$.jobChange.job.jobStats.createTime")), "America/New_York"),
         FORMAT_TIMESTAMP("%X", TIMESTAMP(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
-              "$.jobInsertion.job.jobStats.createTime")), "America/New_York")) AS createTimeEst
+              "$.jobInsertion.job.jobStats.createTime")), "America/New_York")) AS createTimeEst,
+              
+       CAST(TIMESTAMP_SECONDS(CAST(COALESCE(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
+          '$.jobInsertion.job.jobConfig.labels.time'),
+        JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
+          '$.jobChange.job.jobConfig.labels.time')) as INT64)) as STRING) AS call_time
           
          
     FROM
-      `project_id.dataset_id.table_id` ),
+      `project_id.dataset_id_table_id` ),
     BQAudit2_data AS(
     SELECT
       JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
@@ -210,7 +224,7 @@ CREATE OR REPLACE VIEW
       OFFSET
         (3)]) AS data_jobid
     FROM
-      `project_id.dataset_id.table_id`) /* This code queries BQAudit2 */
+      `project_id.dataset_id_table_id`) /* This code queries BQAudit2 */
   SELECT
     principalEmail,
     callerIp,
@@ -223,10 +237,15 @@ CREATE OR REPLACE VIEW
     querytype,
     insertRowCount,
     deleteRowCount,
+    sp_name,
+    call_time,
     startTimeEst,
     createTimeEst,
     errorCode,
     errorMessage,
+    reservedResNameSlotsMs,
+    totalRoutinesProcessed,
+    referencedRoutines,
     statementType,
     STRUCT( EXTRACT(MINUTE
       FROM
@@ -314,7 +333,6 @@ CREATE OR REPLACE VIEW
       UNNEST(GENERATE_ARRAY(1, executionMinuteBuckets)) AS bucket_num ) AS executionTimeline,
     totalTablesProcessed,
     totalViewsProcessed,
-    totalRoutinesProcessed,
     totalProcessedBytes,
     totalBilledBytes,
     (totalBilledBytes / 1000000000) AS totalBilledGigabytes,
@@ -326,7 +344,6 @@ CREATE OR REPLACE VIEW
     CONCAT(projectId, '.', dataset_id, '.', table_id) AS queryDestinationTableAbsolutePath,
     referencedViews,
     referencedTables,
-    referencedRoutines,
     refTable_project_id,
     refTable_dataset_id,
     refTable_table_id,
