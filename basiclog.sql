@@ -175,15 +175,7 @@
       COALESCE(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
           '$.jobInsertion.job.jobConfig.labels.querytype'),
         JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
-          '$.jobChange.job.jobConfig.labels.querytype')) AS querytype,
-      COALESCE( FORMAT_TIMESTAMP("%X", TIMESTAMP(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
-              "$.jobChange.job.jobStats.startTime")), "America/New_York"),
-        FORMAT_TIMESTAMP("%X", TIMESTAMP(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
-              "$.jobInsertion.job.jobStats.startTime")), "America/New_York")) AS startTimeEst,
-      COALESCE( FORMAT_TIMESTAMP("%X", TIMESTAMP(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
-              "$.jobChange.job.jobStats.createTime")), "America/New_York"),
-        FORMAT_TIMESTAMP("%X", TIMESTAMP(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
-              "$.jobInsertion.job.jobStats.createTime")), "America/New_York")) AS createTimeEst
+          '$.jobChange.job.jobConfig.labels.querytype')) AS querytype
           
          
     FROM
@@ -217,8 +209,6 @@
     querytype,
     insertRowCount,
     deleteRowCount,
-    startTimeEst,
-    createTimeEst,
     errorCode,
     errorMessage,
     statementType,
