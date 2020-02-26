@@ -1,5 +1,5 @@
 CREATE OR REPLACE VIEW
-  `namratashah-ctr-sandbox.new_sink.sp_view` AS(
+  `project_id.dataset_id.table_id` AS(
   WITH
     BQAudit2_job AS (
     SELECT
@@ -196,7 +196,7 @@ CREATE OR REPLACE VIEW
           
          
     FROM
-      `namratashah-ctr-sandbox.new_sink.cloudaudit_googleapis_com_data_access` ),
+      `project_id.dataset_id.table_id` ),
     BQAudit2_data AS(
     SELECT
       JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
@@ -213,7 +213,7 @@ CREATE OR REPLACE VIEW
       OFFSET
         (3)]) AS data_jobid
     FROM
-      `namratashah-ctr-sandbox.new_sink.cloudaudit_googleapis_com_data_access`) /* This code queries BQAudit2 */
+      `project_id.dataset_id.table_id`) /* This code queries BQAudit2 */
   SELECT
     principalEmail,
     callerIp,
