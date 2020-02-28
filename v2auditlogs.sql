@@ -1,3 +1,4 @@
+/*Updating basic view with new fields */
 CREATE OR REPLACE VIEW
   `project_id.dataset_id_table_id` AS(
   WITH
