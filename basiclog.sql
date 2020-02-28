@@ -1,4 +1,4 @@
-/* Public BigQuery Audit View */
+/* Public BigQuery Audit View V2 */
   WITH
     BQAudit2_job AS (
     SELECT
