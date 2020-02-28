@@ -1,3 +1,4 @@
+/* Demo View for Bed Bath & Beyond with labels */
 CREATE OR REPLACE VIEW
   `project_id.dataset_id.table_id` AS(
   WITH
